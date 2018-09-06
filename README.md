@@ -22,6 +22,26 @@ Relies on [fiery-data](https://github.com/fiery-data/fiery-data) and is a sister
 - You can create actions & mutations which have access to `$fiery` for [saving, removing, etc](https://github.com/fiery-data/fiery-data/blob/master/src/types.ts#L151)
   - [Mutation Example](#mutation-example)
   - [Action Example](#action-example)
+- Strict mode ensures real-time updates of a sub collection are done with an anonymous commit so when a Store is strict warnings are not thrown.
+  - [Strict Example](#strict-example)
+
+**Features inherited from fiery-data**
+
+- Documents [example](http://github.com/fiery-data/fiery-data#documents)
+- Collections (stored as array or map) [example](http://github.com/fiery-data/fiery-data#collections)
+- Queries (stored as array or map) [example](http://github.com/fiery-data/fiery-data#queries)
+- Pagination [example](#http://github.com/fiery-data/fiery-data#pagination)
+- Real-time or once [example](http://github.com/fiery-data/fiery-data#real-time-or-once)
+- Adding, updating, sync, removing, remove field [example](http://github.com/fiery-data/fiery-data#adding-updating-overwriting-removing)
+- Sub-collections (with cascading deletions!) [example](http://github.com/fiery-data/fiery-data#sub-collections)
+- Return instances of a class [example](http://github.com/fiery-data/fiery-data#return-instances-of-a-class)
+- Add active record methods (sync, update, remove, clear, getChanges) [example](http://github.com/fiery-data/fiery-data#active-record)
+- Control over what properties are sent on save [example](http://github.com/fiery-data/fiery-data#save-fields)
+- Encode & decode properties [example](http://github.com/fiery-data/fiery-data#encode--decode-properties)
+- Adding the key and exists to the document [example](http://github.com/fiery-data/fiery-data#adding-key-and-exists-to-object)
+- Sharing, extending, defining, and global options [example](http://github.com/fiery-data/fiery-data#sharing-extending-defining-and-global-options)
+- Callbacks (error, success, missing, remove) [example](http://github.com/fiery-data/fiery-data#callbacks)
+- Custom binding / unbinding [example](http://github.com/fiery-data/fiery-data#binding-and-unbinding)
 
 **Contents**
 - [Dependencies](#dependencies)
@@ -426,6 +446,17 @@ const store = new Vuex.Store({
 // runs the possibly asynchronous operation of comparing local changes to
 // remote changes for a todo
 store.dispatch(CHECK_FOR_CHANGES) //: Promise
+```
+
+### Strict Example
+
+```javascript
+Vue.use(FieryVue, {strict: true})
+
+const store = new Vuex.Store({
+  strict: true
+  // ...
+})
 ```
 
 ## LICENSE

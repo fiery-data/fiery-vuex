@@ -40,10 +40,13 @@ export type VuexActions = { [action: string]: VuexAction }
 
 let $fiery: FieryInstance
 
+let $strict: boolean = false
+
 export default {
 
   install (Vue, options)
   {
+    $strict = !!(options && options.strict)
     $fiery = getInstance({
       setProperty: (target: any, property: string, value: any) =>
       {
@@ -230,7 +233,7 @@ export function fieryBinding(action: string, actionFactory: FieryBinding): VuexA
 
 function injectSubMutation (store: any, options?: FieryOptions): FieryOptionsMap | undefined
 {
-  if (options && options.sub)
+  if (options && options.sub && $strict)
   {
     const subs = options.sub
     const out = {}
