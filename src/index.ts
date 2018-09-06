@@ -1,6 +1,6 @@
 
 import Vuex from 'vuex'
-import getInstance, { getOptions, FierySource, FieryTarget, FieryOptions, FieryOptionsInput, FieryInstance } from 'fiery-data'
+import getInstance, { getOptions, FierySource, FieryTarget, FieryOptions, FieryOptionsMap, FieryOptionsInput, FieryInstance } from 'fiery-data'
 
 
 
@@ -21,6 +21,20 @@ export type FieryBindingFactory = <T extends FieryTarget>(source: FierySource, o
 export type FieryBinding = (context: any, payload: any, fiery: FieryBindingFactory) => FieryTarget
 
 export type FieryBindings = { [action: string]: FieryBinding }
+
+export type FieryState = (fiery: FieryInstance) => VuexState
+
+
+
+export type VuexMutation = (state: any, payload: any) => void
+
+export type VuexMutations = { [mutation: string]: VuexMutation }
+
+export type VuexState = { [property: string]: any }
+
+export type VuexAction = <T>(context: any, payload: any) => Promise<T> | T | any
+
+export type VuexActions = { [action: string]: VuexAction }
 
 
 
@@ -63,7 +77,33 @@ export default {
   }
 }
 
-export function fieryMapMutations(mappings: FieryMutationMapping)
+export function fieryState(factory: FieryState): VuexState
+{
+  /*
+  // maybe one day when function states have this = Store we can do this
+  const bind: FieryBindingFactory = (source, options, mutation) =>
+  {
+    const parsedOptions = options ? getOptions(options) : undefined
+    const mutateOptions = {
+      extends: parsedOptions,
+      sub: injectSubMutation(store, parsedOptions),
+      onMutate: (mutator) => {
+        if (mutation) {
+          store.commit(mutation, mutator)
+        } else {
+          store._withCommit(mutator)
+        }
+      }
+    }
+
+    return $fiery(source, mutateOptions, mutation)
+  }
+  */
+
+  return factory($fiery)
+}
+
+export function fieryMapMutations(mappings: FieryMutationMapping): VuexMutations
 {
   const out = {}
 
@@ -75,7 +115,8 @@ export function fieryMapMutations(mappings: FieryMutationMapping)
 
     assertString(property, 'fieryMapMutations can only have properties that are strings')
 
-    out[mutation] = (state, mutator) => {
+    out[mutation] = (state, mutator) =>
+    {
       state[property] = mutator()
     }
   }
@@ -83,7 +124,7 @@ export function fieryMapMutations(mappings: FieryMutationMapping)
   return out
 }
 
-export function fieryMutations(mutations: FieryMutations)
+export function fieryMutations(mutations: FieryMutations): VuexMutations
 {
   const out = {}
 
@@ -97,17 +138,17 @@ export function fieryMutations(mutations: FieryMutations)
   return out
 }
 
-export function fieryMutation(mutationFactory: FieryMutation)
+export function fieryMutation(mutationFactory: FieryMutation): VuexMutation
 {
   assertFunction(mutationFactory, 'fieryMutation can only be passed a function which accepts (state, payload, $fiery)')
 
-  return (state: any, payload: any) =>
+  return (state, payload) =>
   {
     mutationFactory(state, payload, $fiery)
   }
 }
 
-export function fieryActions(actions: FieryActions)
+export function fieryActions(actions: FieryActions): VuexActions
 {
   const out = {}
 
@@ -121,17 +162,17 @@ export function fieryActions(actions: FieryActions)
   return out
 }
 
-export function fieryAction(action: FieryAction)
+export function fieryAction(action: FieryAction): VuexAction
 {
   assertFunction(action, 'fieryAction can only be passed a function which accepts (context, payload, $fiery)')
 
-  return (context: any, payload: any) =>
+  return (context, payload) =>
   {
     return action(context, payload, $fiery)
   }
 }
 
-export function fieryBindings(actions: FieryBindings)
+export function fieryBindings(actions: FieryBindings): VuexActions
 {
   const out = {}
 
@@ -143,12 +184,12 @@ export function fieryBindings(actions: FieryBindings)
   return out
 }
 
-export function fieryBinding(action: string, actionFactory: FieryBinding)
+export function fieryBinding(action: string, actionFactory: FieryBinding): VuexAction
 {
   assertString(action, 'fieryBinding must be passed the action name as the first argument')
   assertFunction(actionFactory, 'fieryBinding can only be passed a function which accepts (context, payload, $fiery)')
 
-  return function(context: any, payload: any)
+  return function(context, payload)
   {
     const store: any = this
     let initialized: boolean = false
@@ -157,9 +198,7 @@ export function fieryBinding(action: string, actionFactory: FieryBinding)
 
     const actionFiery: FieryBindingFactory = (source, options, mutation) =>
     {
-      const parsedOptions = options
-        ? getOptions(options)
-        : undefined
+      const parsedOptions = options ? getOptions(options) : undefined
 
       actionMutation = mutation
       actionOptions = {
@@ -189,7 +228,7 @@ export function fieryBinding(action: string, actionFactory: FieryBinding)
   }
 }
 
-function injectSubMutation (store: any, options?: FieryOptions): any
+function injectSubMutation (store: any, options?: FieryOptions): FieryOptionsMap | undefined
 {
   if (options && options.sub)
   {
@@ -213,22 +252,22 @@ function injectSubMutation (store: any, options?: FieryOptions): any
   }
 }
 
-function assertObject(x: any, message: string)
+function assertObject(x: any, message: string): void
 {
   assert(x !== null && typeof x === 'object', message)
 }
 
-function assertFunction(x: any, message: string)
+function assertFunction(x: any, message: string): void
 {
   assert(typeof x === 'function', message)
 }
 
-function assertString(x: any, message: string)
+function assertString(x: any, message: string): void
 {
   assert(typeof x === 'string', message)
 }
 
-function assert(x: boolean, message: string)
+function assert(x: boolean, message: string): void
 {
   if (!x) throw message
 }

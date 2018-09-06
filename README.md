@@ -17,7 +17,11 @@ Relies on [fiery-data](https://github.com/fiery-data/fiery-data) and is a sister
 
 **Features**
 - You can bind documents and collections to the store, and change them dynamically through actions.
+  - [Document Example](#document-example)
+  - [Collection Example](#collection-example)
 - You can create actions & mutations which have access to `$fiery` for [saving, removing, etc](https://github.com/fiery-data/fiery-data/blob/master/src/types.ts#L151)
+  - [Mutation Example](#mutation-example)
+  - [Action Example](#action-example)
 
 **Contents**
 - [Dependencies](#dependencies)
@@ -49,7 +53,7 @@ Installation via npm : `npm install --save fiery-vuex`
 ```javascript
 import Vue from 'vue'
 import Vuex from 'vuex'
-import FieryVuex, { fieryBindings, fieryActions, fieryMutations, fieryMapMutations } from 'fiery-vuex'
+import FieryVuex, { fieryBindings, fieryActions, fieryMutations, fieryMapMutations, fieryState } from 'fiery-vuex'
 import firebase from 'firebase'
 
 require('firebase/firestore')
@@ -77,7 +81,11 @@ const fs = firebase.firestore(app);
 const store = new Vuex.Store({
   state: {
     currentTodo: null,
-    todos: []
+    todos: [],
+    // this should not be used in strict mode, since this document or collection will receive real-time updates outside of a mutation
+    ...fieryState($fiery => {
+      specificTodo: $fiery(fs.collection('todos').doc(23))
+    })
   },
   mutations: {
     // functions you want access to $fiery to perform operations
@@ -166,7 +174,11 @@ const TodoOptions = {
 const store = new Vuex.Store({
   state: {
     currentTodo: null as Todo | null,
-    todos: [] as Todo[]
+    todos: [] as Todo[],
+    // this should not be used in strict mode, since this document or collection will receive real-time updates outside of a mutation
+    ...fieryState($fiery => {
+      specificTodo: $fiery(fs.collection('todos').doc(23), TodoOptions) as Todo
+    })
   },
   mutations: {
     ...fieryMutations({
@@ -212,12 +224,18 @@ const store = new Vuex.Store({
 var fieryMutation = FieryVuex.fieryMutation;
 var fieryBinding = FieryVuex.fieryBinding;
 var fieryAction = FieryVuex.fieryAction;
+var fieryState = FieryVuex.fieryState;
 
 var store = new Vuex.Store({
-  state: {
-    currentTodo: null,
-    todos: []
-  },
+  // You must wrap the entire state with fieryState if you want access to $fiery
+  // this should not be used in strict mode, since this document or collection will receive real-time updates outside of a mutation
+  state: fieryState(function($fiery) {
+    return {
+      currentTodo: null,
+      todos: [],
+      specificTodo: $fiery(fs.collection('todos').doc(23))
+    }
+  }),
   mutations: {
     finishTodo: fieryMutation(function(state, todo, $fiery) {
       todo.done = true;
@@ -258,6 +276,156 @@ var store = new Vuex.Store({
     })
   }
 });
+```
+
+### Document Example
+
+```javascript
+const SET_POST = 'setPost'
+
+const store = new Vuex.Store({
+  state: {
+    post: null
+  },
+  mutations: {
+    // since state should only be modified synchronously through mutations, this
+    // is necessary so the action below can update the post when it changes.
+    [SET_POST] (state, getPost) {
+      state.post = getPost()
+      // you can do other stuff in here, stuff you want done each time post changes
+    },
+    // this is equivalent and can generate multiple mutations in one call.
+    ...fieryMapMutations({
+      [SET_POST]: 'post'
+    })
+  },
+  actions: {
+    ...fieryBindings({
+      // state is modified asynchronously through actions, this will call setPost
+      // with a function which MUST be called ONCE or the post will not be updated
+      // with the data from Firestore
+      loadPost (context, postId, $fiery) {
+        return $fiery(fs.collection('posts').doc(postId), {}, SET_POST)
+      }
+    })
+  }
+})
+
+// SET post to posts/123
+// this returns a promise which resolves when the post is first loaded from cache/server
+store.dispatch('loadPost', 123)
+```
+
+### Collection Example
+
+```javascript
+const SET_GROUPS = 'setGroups'
+
+const store = new Vuex.Store({
+  state: {
+    groups: []
+  },
+  mutations: {
+    // since state should only be modified synchronously through mutations, this
+    // is necessary so the action below can update the groups when they change
+    [SET_GROUPS] (state, getGroups) {
+      state.groups = getGroups()
+      // you can do other stuff in here, stuff you want done each time groups changes
+    },
+    // this is equivalent and can generate multiple mutations in one call.
+    ...fieryMapMutations({
+      [SET_GROUPS]: 'groups'
+    })
+  },
+  actions: {
+    ...fieryBindings({
+      // state is modified asynchronously through actions, this will call setGroups
+      // with a function which MUST be called ONCE or the groups will not be updated
+      // with the data from Firestore
+      loadGroups (context, search, $fiery) {
+        const options = {
+          query: q => {
+            if (search.user) return q.where('users', 'array-contains', search.user)
+            if (search.code) return q.where('code', '==', search.code)
+            return q
+          }
+        }
+        return $fiery(fs.collection('groups'), options, SET_GROUPS)
+      }
+    })
+  }
+})
+
+// this returns a promise which resolves when the post is first loaded from cache/server
+store.dispatch('loadGroups') // all groups
+store.dispatch('loadGroups', {user: 34}) // all groups with user 34
+store.dispatch('loadGroups', {code: 'ABC'}) // all groups with code ABC
+```
+
+### Mutation Example
+
+```javascript
+const FINISH_TASK = 'finishTask'
+const ADD_TASK = 'addTask'
+
+const store = new Vuex.Store({
+  mutations: {
+    // This will call mutations normally but passes $fiery so operations can be
+    // performed on the state or payload.
+    ...fieryMutations({
+      [FINISH_TASK] (state, task, $fiery) {
+        task.done = true
+        task.done_at = new Date()
+        $fiery.save(task) // creates or updates the task
+      },
+      [ADD_TASK] (state, name, $fiery) {
+        const task = $fiery(fs.collection('tasks').doc(), {once: true}) // we don't want real-time updates of this object
+        task.name = name
+        $fiery.save(task)
+      }
+    })
+  }
+})
+
+// updates the task and saves it to Firestore
+store.commit(FINISH_TASK, task)
+
+// adds a new task
+store.commit(ADD_TASK, 'Task Name')
+```
+
+### Action Example
+
+```javascript
+const EVALUATE_CHANGES = 'evaluateChanges'
+const CHECK_FOR_CHANGES = 'checkForChanges'
+
+const store = new Vuex.Store({
+  state: {
+    todo: null
+  },
+  mutations: {
+    [EVALUATE_CHANGES] (state, changes) {
+      // do something with the changes found in todo
+    }
+  },
+  actions: {
+    // This will call actions normally but passes $fiery so operations can be
+    // performed on the context or payload
+    ...fieryActions({
+      [CHECK_FOR_CHANGES] ({state, commit}, payload, $fiery) {
+        // return a promise so you can chain this action like normal
+        return $fiery.getChanges(state.todo).then(changes => {
+          commit(EVALUATE_CHANGES, changes)
+        })
+      }
+    })
+  }
+})
+
+// runs the possibly asynchronous operation of comparing local changes to
+// remote changes for a todo
+store.dispatch(CHECK_FOR_CHANGES) //: Promise
 ```
 
 ## LICENSE

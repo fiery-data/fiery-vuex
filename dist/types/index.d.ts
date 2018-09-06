@@ -16,14 +16,27 @@ export declare type FieryBinding = (context: any, payload: any, fiery: FieryBind
 export declare type FieryBindings = {
     [action: string]: FieryBinding;
 };
+export declare type FieryState = (fiery: FieryInstance) => VuexState;
+export declare type VuexMutation = (state: any, payload: any) => void;
+export declare type VuexMutations = {
+    [mutation: string]: VuexMutation;
+};
+export declare type VuexState = {
+    [property: string]: any;
+};
+export declare type VuexAction = <T>(context: any, payload: any) => Promise<T> | T | any;
+export declare type VuexActions = {
+    [action: string]: VuexAction;
+};
 declare const _default: {
     install(Vue: any, options: any): void;
 };
 export default _default;
-export declare function fieryMapMutations(mappings: FieryMutationMapping): {};
-export declare function fieryMutations(mutations: FieryMutations): {};
-export declare function fieryMutation(mutationFactory: FieryMutation): (state: any, payload: any) => void;
-export declare function fieryActions(actions: FieryActions): {};
-export declare function fieryAction(action: FieryAction): (context: any, payload: any) => any;
-export declare function fieryBindings(actions: FieryBindings): {};
-export declare function fieryBinding(action: string, actionFactory: FieryBinding): (context: any, payload: any) => Promise<FieryTarget>;
+export declare function fieryState(factory: FieryState): VuexState;
+export declare function fieryMapMutations(mappings: FieryMutationMapping): VuexMutations;
+export declare function fieryMutations(mutations: FieryMutations): VuexMutations;
+export declare function fieryMutation(mutationFactory: FieryMutation): VuexMutation;
+export declare function fieryActions(actions: FieryActions): VuexActions;
+export declare function fieryAction(action: FieryAction): VuexAction;
+export declare function fieryBindings(actions: FieryBindings): VuexActions;
+export declare function fieryBinding(action: string, actionFactory: FieryBinding): VuexAction;
