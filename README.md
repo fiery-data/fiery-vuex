@@ -49,7 +49,7 @@ Installation via npm : `npm install --save fiery-vuex`
 ```javascript
 import Vue from 'vue'
 import Vuex from 'vuex'
-import FieryVuex, { fieryBindings, fieryActions, fieryMutations, fieryMapMutations } from 'fiery-vue'
+import FieryVuex, { fieryBindings, fieryActions, fieryMutations, fieryMapMutations } from 'fiery-vuex'
 import firebase from 'firebase'
 
 require('firebase/firestore')
