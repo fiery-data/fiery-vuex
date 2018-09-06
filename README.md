@@ -22,9 +22,7 @@ Relies on [fiery-data](https://github.com/fiery-data/fiery-data) and is a sister
 **Contents**
 - [Dependencies](#dependencies)
 - [Installation](#installation)
-- [Support](#support)
 - [Usage](#usage)
-- [Todo](#todo)
 
 ### Dependencies
 
@@ -68,6 +66,14 @@ const fs = firebase.firestore(app);
 #### Example (ES2015)
 
 ```javascript
+// The store has the following functionality:
+// - store.commit( 'finishTodo', todo )
+// - store.commit( 'nextPage' )
+// - store.dispatch( 'setTodo', todoId )
+// - store.dispatch( 'loadTodos' )
+// - store.dispatch( 'searchTodos', {done: true, limit: 10} )
+// - store.dispatch( 'checkForChanges' )
+
 const store = new Vuex.Store({
   state: {
     currentTodo: null,
@@ -110,10 +116,10 @@ const store = new Vuex.Store({
         return $fiery(fs.collection('todos'), {}, 'setTodos')
       },
       // store.dispatch( 'searchTodos', {done: true, limit: 10} )
-      searchTodos (context, payload, $fiery) {
+      searchTodos (context, {done, limit}, $fiery) {
         const options = {
-          query: q => q.where('done', '==', payload.done),
-          limit: payload.limit
+          query: q => q.where('done', '==', done),
+          limit: limit
         }
         return $fiery(fs.collection('todos'), options, 'setTodos')
       }
@@ -187,11 +193,11 @@ const store = new Vuex.Store({
       loadTodos (context, payload, $fiery): Todo[] {
         return $fiery(fs.collection('todos'), TodoOptions, 'setTodos')
       },
-      searchTodos (context, payload, $fiery): Todo[] {
+      searchTodos (context, {done, limit}, $fiery): Todo[] {
         const options = {
           extends: TodoOptions,
-          query: q => q.where('done', '==', payload.done),
-          limit: payload.limit
+          query: q => q.where('done', '==', done),
+          limit: limit
         }
         return $fiery(fs.collection('todos'), options, 'setTodos')
       }
@@ -236,11 +242,11 @@ var store = new Vuex.Store({
     loadTodos: fieryBinding('loadTodos', function(context, payload, $fiery) {
       return $fiery(fs.collection('todos'), {}, 'setTodos');
     }),
-    searchTodos: fieryBinding('searchTodos', function(context, payload, $fiery) {
+    searchTodos: fieryBinding('searchTodos', function(context, search, $fiery) {
       var options = {
-        limit: payload.limit,
+        limit: search.limit,
         query: function(q) {
-          return q.where('done', '==', payload.done)
+          return q.where('done', '==', search.done)
         }
       }
       return $fiery(fs.collection('todos'), options, 'setTodos')
