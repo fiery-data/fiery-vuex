@@ -67,9 +67,13 @@ export function fieryMapMutations(mappings: FieryMutationMapping)
 {
   const out = {}
 
+  assertObject(mappings, 'fieryMapMutations can only be passed an object')
+
   for (let mutation in mappings)
   {
     const property = mappings[mutation]
+
+    assertString(property, 'fieryMapMutations can only have properties that are strings')
 
     out[mutation] = (state, mutator) => {
       state[property] = mutator()
@@ -83,6 +87,8 @@ export function fieryMutations(mutations: FieryMutations)
 {
   const out = {}
 
+  assertObject(mutations, 'fieryMutations can only be passed an object')
+
   for (let mutationName in mutations)
   {
     out[mutationName] = fieryMutation(mutations[mutationName])
@@ -93,6 +99,8 @@ export function fieryMutations(mutations: FieryMutations)
 
 export function fieryMutation(mutationFactory: FieryMutation)
 {
+  assertFunction(mutationFactory, 'fieryMutation can only be passed a function which accepts (state, payload, $fiery)')
+
   return (state: any, payload: any) =>
   {
     mutationFactory(state, payload, $fiery)
@@ -102,6 +110,8 @@ export function fieryMutation(mutationFactory: FieryMutation)
 export function fieryActions(actions: FieryActions)
 {
   const out = {}
+
+  assertObject(actions, 'fieryActions can only be passed an object')
 
   for (let action in actions)
   {
@@ -113,6 +123,8 @@ export function fieryActions(actions: FieryActions)
 
 export function fieryAction(action: FieryAction)
 {
+  assertFunction(action, 'fieryAction can only be passed a function which accepts (context, payload, $fiery)')
+
   return (context: any, payload: any) =>
   {
     return action(context, payload, $fiery)
@@ -133,6 +145,9 @@ export function fieryBindings(actions: FieryBindings)
 
 export function fieryBinding(action: string, actionFactory: FieryBinding)
 {
+  assertString(action, 'fieryBinding must be passed the action name as the first argument')
+  assertFunction(actionFactory, 'fieryBinding can only be passed a function which accepts (context, payload, $fiery)')
+
   return function(context: any, payload: any)
   {
     const store: any = this
@@ -155,6 +170,8 @@ export function fieryBinding(action: string, actionFactory: FieryBinding)
           initialized = true
         }
       }
+
+      assertString(mutation, 'fieryBinding must be passed the mutation as the third argument to $fiery')
 
       return $fiery(source, actionOptions, action)
     }
@@ -194,4 +211,24 @@ function injectSubMutation (store: any, options?: FieryOptions): any
 
     return out
   }
+}
+
+function assertObject(x: any, message: string)
+{
+  assert(x !== null && typeof x === 'object', message)
+}
+
+function assertFunction(x: any, message: string)
+{
+  assert(typeof x === 'function', message)
+}
+
+function assertString(x: any, message: string)
+{
+  assert(typeof x === 'string', message)
+}
+
+function assert(x: boolean, message: string)
+{
+  if (!x) throw message
 }
