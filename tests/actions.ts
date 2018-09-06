@@ -5,7 +5,7 @@
 
 import { getStore, getStored } from './util'
 import { expect } from 'chai'
-import FieryVuex, { fieryActions } from '../src'
+import FieryVuex, { fieryMutations, fieryBindings, fieryMapMutations } from '../src'
 import * as Vue from 'vue'
 import * as Vuex from 'vuex'
 
@@ -44,18 +44,18 @@ describe('actions', function()
         todo: new Todo()
       },
       mutations: {
-        setTodo (state, getTodo) {
-          state.todo = getTodo()
-        },
-        unfinishTodo (state, todo) {
+        ...fieryMapMutations({
+          setTodo: 'todo'
+        }),
+        unfinishTodo(state, todo) {
           todo.done = false
           todo.$save()
         }
       },
       actions: {
-        ...fieryActions({
-          loadTodo ($fiery, commit, payload, context) {
-            commit('setTodo', $fiery(fs.collection('todos').doc(payload), TodoOptions))
+        ...fieryBindings({
+          loadTodo (context, payload, $fiery) {
+            return $fiery(fs.collection('todos').doc(payload), TodoOptions, 'setTodo')
           }
         })
       }
@@ -81,7 +81,7 @@ describe('actions', function()
 
     store.dispatch('loadTodo', 3)
 
-    expect(store.state.todo).to.be.null
+    expect(store.state.todo).to.be.undefined
 
     store.dispatch('loadTodo', 2)
 
@@ -112,18 +112,22 @@ describe('actions', function()
         setTodos (state, getTodos) {
           state.todos = getTodos()
         },
-        unfinishTodo (state, todo) {
-          todo.done = false
-          todo.$save()
-        }
+        ...fieryMutations({
+          unfinishTodo(state, todo, fiery) {
+            todo.done = false
+            fiery.save(todo)
+          }
+        })
       },
       actions: {
-        ...fieryActions({
-          updateTodos ($fiery, commit, payload, context) {
-            commit('setTodos', $fiery(fs.collection('todos'), {
+        ...fieryBindings({
+          updateTodos(context, payload, $fiery) {
+            const options = {
               extends: TodoOptions,
               query: q => q.orderBy('name').where('done', '==', payload.done)
-            }))
+            }
+
+            return $fiery(fs.collection('todos'), options, 'setTodos')
           }
         })
       }
@@ -161,6 +165,87 @@ describe('actions', function()
     expect(store.state.todos.length).to.equal(2)
     expect(store.state.todos[0].name).to.equal('T1')
     expect(store.state.todos[1].name).to.equal('T2')
+  })
+
+  it('sub', function()
+  {
+    class Comment {
+      content: string = ''
+      created_at: Date = new Date()
+    }
+
+    class Post {
+      title: string = ''
+      content: string = ''
+      comments: Comment[] = []
+    }
+
+    const CommentOptions = {
+      shared: true,
+      type: Comment,
+      include: ['content', 'created_at'],
+      timestamps: ['created_at']
+    }
+
+    const PostOptions = {
+      shared: true,
+      type: Post,
+      include: ['title', 'content'],
+      sub: {
+        comments: CommentOptions
+      }
+    }
+
+    const fs = getStore('actions sub', {
+      'post/1': { title: 'T1', content: 'C1' },
+      'post/1/comments/1': { content: 'C1', created_at: 1 },
+      'post/1/comments/2': { content: 'C2', created_at: 2 }
+    })
+
+    const store = new Vuex.Store({
+      strict: true,
+      state: {
+        post: null as Post | null
+      },
+      mutations: {
+        ...fieryMapMutations({
+          'setPost': 'post'
+        })
+      },
+      actions: {
+        ...fieryBindings({
+          loadPost (context, payload, $fiery): Post {
+            return $fiery(fs.collection('post').doc(payload), PostOptions, 'setPost')
+          }
+        })
+      }
+    })
+
+    store.dispatch('loadPost', 1)
+
+    const post: Post = store.state.post as Post
+
+    expect(post).to.be.ok
+
+    if (post)
+    {
+      expect(post).to.be.instanceof(Post)
+      expect(post.comments).to.be.ok
+      expect(post.comments.length).to.equal(2)
+      expect(post.comments[0]).to.be.instanceof(Comment)
+      expect(post.comments[1]).to.be.instanceof(Comment)
+      expect(post.comments.map(c => c.content)).to.deep.equal(['C1', 'C2'])
+
+      fs.doc('post/1/comments/3').set({
+        content: 'C3', created_at: 3
+      })
+
+      expect(post.comments.length).to.equal(3)
+      expect(post.comments[0]).to.be.instanceof(Comment)
+      expect(post.comments[1]).to.be.instanceof(Comment)
+      expect(post.comments[2]).to.be.instanceof(Comment)
+      expect(post.comments.map(c => c.content)).to.deep.equal(['C1', 'C2', 'C3'])
+    }
   })
 
 })

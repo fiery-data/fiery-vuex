@@ -1,6 +1,6 @@
 {
     "name": "fiery-vuex",
-    "version": "0.4.0",
+    "version": "0.5.0",
     "author": "Philip Diffenderfer",
     "description": "A Typescript/JS library for Vuex and Google Firebase Firestore",
     "license": "MIT",
@@ -24,7 +24,7 @@
         "fiery-data"
     ],
     "dependencies": {
-        "fiery-data": "0.4.0"
+        "fiery-data": "^0.5.0"
     },
     "devDependencies": {
         "@types/chai": "^4.1.4",

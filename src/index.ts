@@ -1,106 +1,197 @@
 
-import getInstance, { FierySource, FieryTarget, FieryOptionsInput } from 'fiery-data'
+import Vuex from 'vuex'
+import getInstance, { getOptions, FierySource, FieryTarget, FieryOptions, FieryOptionsInput, FieryInstance } from 'fiery-data'
 
-let Vue
+
+
+export * from 'fiery-data'
+
+export type FieryMutation = (state: any, payload: any, Fiery: FieryInstance) => void
+
+export type FieryMutations = { [mutation: string]: FieryMutation }
+
+export type FieryAction = (context: any, payload: any, Fiery: FieryInstance) => any
+
+export type FieryActions = { [action: string]: FieryAction }
+
+export type FieryMutationMapping = { [mutation: string]: string }
+
+export type FieryBindingFactory = <T extends FieryTarget>(source: FierySource, options: FieryOptionsInput, mutation: string) => T
+
+export type FieryBinding = (context: any, payload: any, fiery: FieryBindingFactory) => FieryTarget
+
+export type FieryBindings = { [action: string]: FieryBinding }
+
+
+
+let $fiery: FieryInstance
 
 export default {
 
-  install (vue, options)
+  install (Vue, options)
   {
-    Vue = vue
+    $fiery = getInstance({
+      setProperty: (target: any, property: string, value: any) =>
+      {
+        Vue.set(target, property, value)
+      },
+      removeProperty: (target: any, property: string) =>
+      {
+        Vue.delete(target, property)
+      },
+      arraySet: (target: any[], index: number, value: any) =>
+      {
+        if (target[index] !== value)
+        {
+          target.splice(index, 1, value)
+        }
+      },
+      arrayResize: (target: any[], size: number) =>
+      {
+        if (target.length > size)
+        {
+          target.splice(size, target.length - size)
+        }
+        else if (target.length < size)
+        {
+          target.length = size
+        }
+      }
+    })
+
+    this.$fiery = $fiery
   }
 }
 
-export function fieryActions(actions)
+export function fieryMapMutations(mappings: FieryMutationMapping)
 {
   const out = {}
-  const nullers = {}
-  const $fiery = getInstance({
-    ...fierySettings,
-    removeNamed (name: string) {
-      if (name in nullers) {
-        nullers[name]()
-      }
-    }
-  })
 
-  for (let actionName in actions)
+  for (let mutation in mappings)
   {
-    out[actionName] = fieryAction($fiery, actionName, actions[actionName], (nuller) => nullers[actionName] = nuller)
+    const property = mappings[mutation]
+
+    out[mutation] = (state, mutator) => {
+      state[property] = mutator()
+    }
   }
 
   return out
 }
 
-export function fieryAction($fiery, actionName, actionFactory, getNuller)
+export function fieryMutations(mutations: FieryMutations)
 {
-  let actionMutation: string
-  let actionOptions: FieryOptionsInput
-  let actionContext: any
+  const out = {}
 
-  getNuller(() =>
+  for (let mutationName in mutations)
   {
-    if (actionContext && actionMutation)
-    {
-      actionContext.commit(actionMutation, () => null)
-    }
-  })
+    out[mutationName] = fieryMutation(mutations[mutationName])
+  }
 
-  return (context, payload) =>
+  return out
+}
+
+export function fieryMutation(mutationFactory: FieryMutation)
+{
+  return (state: any, payload: any) =>
   {
-    actionContext = context
-
-    let actionFiery = (source: FierySource, options: FieryOptionsInput): FieryTarget =>
-    {
-      actionOptions = {
-        extends: options,
-        onMutate: (mutator) => {
-          if (actionMutation) {
-            context.commit(actionMutation, mutator)
-          } else {
-            mutator()
-          }
-        }
-      }
-
-      return $fiery(source, actionOptions, actionName)
-    }
-
-    let actionCommit = (mutation: string, initial: FieryTarget) =>
-    {
-      context.commit(actionMutation = mutation, () => initial)
-    }
-
-    actionFactory(actionFiery, actionCommit, payload, context)
+    mutationFactory(state, payload, $fiery)
   }
 }
 
-export const fierySettings =
+export function fieryActions(actions: FieryActions)
 {
-  setProperty: (target: any, property: string, value: any) =>
+  const out = {}
+
+  for (let action in actions)
   {
-    Vue.set(target, property, value)
-  },
-  removeProperty: (target: any, property: string) =>
+    out[action] = fieryAction(actions[action])
+  }
+
+  return out
+}
+
+export function fieryAction(action: FieryAction)
+{
+  return (context: any, payload: any) =>
   {
-    Vue.delete(target, property)
-  },
-  arraySet: (target: any[], index: number, value: any) =>
+    return action(context, payload, $fiery)
+  }
+}
+
+export function fieryBindings(actions: FieryBindings)
+{
+  const out = {}
+
+  for (let action in actions)
   {
-    if (target[index] !== value)
+    out[action] = fieryBinding(action, actions[action])
+  }
+
+  return out
+}
+
+export function fieryBinding(action: string, actionFactory: FieryBinding)
+{
+  return function(context: any, payload: any)
+  {
+    const store: any = this
+    let initialized: boolean = false
+    let actionMutation: string = ''
+    let actionOptions: FieryOptionsInput
+
+    const actionFiery: FieryBindingFactory = (source, options, mutation) =>
     {
-      target.splice(index, 1, value)
+      const parsedOptions = options
+        ? getOptions(options)
+        : undefined
+
+      actionMutation = mutation
+      actionOptions = {
+        extends: parsedOptions,
+        sub: injectSubMutation(store, parsedOptions),
+        onMutate: (mutator) => {
+          context.commit(mutation, mutator)
+          initialized = true
+        }
+      }
+
+      return $fiery(source, actionOptions, action)
     }
-  },
-  arrayResize: (target: any[], size: number) =>
+
+    const initial = actionFactory(context, payload, actionFiery)
+
+    if (!initialized && actionMutation)
+    {
+      context.commit(actionMutation, () => initial)
+    }
+
+    const entry = $fiery.entryFor(action)
+
+    return entry && entry.promise ? entry.promise : Promise.resolve(initial)
+  }
+}
+
+function injectSubMutation (store: any, options?: FieryOptions): any
+{
+  if (options && options.sub)
   {
-    if (target.length > size)
+    const subs = options.sub
+    const out = {}
+
+    for (var sub in subs)
     {
-      target.splice(size, target.length - size)
+      const subOptions = subs[sub]
+
+      out[sub] = {
+        extends: subOptions,
+        sub: injectSubMutation(store, subOptions as FieryOptions),
+        onMutate: (mutator) => {
+          store._withCommit(mutator)
+        }
+      }
     }
-    else if (target.length < size)
-    {
-      target.length = size
-    }
+
+    return out
   }
 }
