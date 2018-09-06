@@ -42,9 +42,9 @@ Installation via npm : `npm install --save fiery-vuex`
 ### Usage
 
 - [Setup](#setup)
-- [Example (ES2015)](#example--es2015)
-- [Example (Typescript)](#example--typescript)
-- [Example (JS)](#example--js)
+- [Example (ES2015)](#example-es2015)
+- [Example (Typescript)](#example-typescript)
+- [Example (JS)](#example-js)
 
 #### Setup
 
