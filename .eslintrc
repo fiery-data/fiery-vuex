@@ -1,6 +1,5 @@
 {
-    "extends": "standard",
-    "plugins": ["html"],
+    "plugins": [],
     "env": {
         "amd": true
     },

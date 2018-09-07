@@ -3,10 +3,7 @@
   "compilerOptions": {
     "target": "es5",
     "module": "commonjs",
-    "moduleResolution": "node",
-    "lib": [
-      "es6"
-    ],
+    "lib": ["es6"],
     "experimentalDecorators": true,
     "noImplicitAny": false,
     "noImplicitThis": false,
@@ -18,7 +15,8 @@
     "sourceMap": true,
     "declaration": true,
     "declarationDir": "types",
-    "outDir": "dist"
+    "outDir": "dist",
+    "types": ["node"]
   },
   "include": [
     "src"

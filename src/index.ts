@@ -1,6 +1,7 @@
 
 import Vuex from 'vuex'
-import getInstance, { getOptions, FierySource, FieryTarget, FieryOptions, FieryOptionsMap, FieryOptionsInput, FieryInstance } from 'fiery-data'
+
+import { getInstance, getOptions, FierySource, FieryTarget, FieryOptions, FieryOptionsMap, FieryOptionsInput, FieryInstance } from 'fiery-data'
 
 
 

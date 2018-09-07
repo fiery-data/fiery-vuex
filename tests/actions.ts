@@ -15,7 +15,7 @@ describe('actions', function()
 
   before(function() {
     VueTest.use(Vuex)
-    VueTest.use(FieryVuex)
+    VueTest.use(FieryVuex, {strict: true})
   })
 
   class Todo {
