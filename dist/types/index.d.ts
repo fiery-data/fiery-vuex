@@ -12,11 +12,12 @@ export declare type FieryMutationMapping = {
     [mutation: string]: string;
 };
 export declare type FieryBindingFactory = <T extends FieryTarget>(source: FierySource, options: FieryOptionsInput, mutation: string) => T;
-export declare type FieryBinding = (context: any, payload: any, fiery: FieryBindingFactory) => FieryTarget;
+export declare type FieryBinding = (context: any, payload: any, fiery: FieryBindingFactory, commit: FieryCommit) => FieryTarget;
 export declare type FieryBindings = {
     [action: string]: FieryBinding;
 };
 export declare type FieryState = (fiery: FieryInstance) => VuexState;
+export declare type FieryCommit = <T extends FieryTarget>(mutation: string, target: T) => T;
 export declare type VuexMutation = (state: any, payload: any) => void;
 export declare type VuexMutations = {
     [mutation: string]: VuexMutation;

@@ -19,11 +19,13 @@ export type FieryMutationMapping = { [mutation: string]: string }
 
 export type FieryBindingFactory = <T extends FieryTarget>(source: FierySource, options: FieryOptionsInput, mutation: string) => T
 
-export type FieryBinding = (context: any, payload: any, fiery: FieryBindingFactory) => FieryTarget
+export type FieryBinding = (context: any, payload: any, fiery: FieryBindingFactory, commit: FieryCommit) => FieryTarget
 
 export type FieryBindings = { [action: string]: FieryBinding }
 
 export type FieryState = (fiery: FieryInstance) => VuexState
+
+export type FieryCommit = <T extends FieryTarget>(mutation: string, target: T) => T
 
 
 
@@ -219,9 +221,18 @@ export function fieryBinding(action: string, actionFactory: FieryBinding): VuexA
       return $fiery(source, actionOptions, action)
     }
 
-    const initial = actionFactory(context, payload, actionFiery)
+    const actionCommit: FieryCommit = (mutation, target) =>
+    {
+      actionMutation = mutation
 
-    if (!initialized && actionMutation)
+      return target
+    }
+
+    const initial = actionFactory(context, payload, actionFiery, actionCommit)
+
+    assertString(actionMutation, 'fieryBinding must have a mutation set through $fiery (3rd argument to fieryBinding) or calling commit (4th argument)')
+
+    if (!initialized)
     {
       context.commit(actionMutation, () => initial)
     }
