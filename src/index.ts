@@ -206,17 +206,22 @@ export function fieryBinding(action: string, actionFactory: FieryBinding): VuexA
     {
       const parsedOptions = options ? getOptions(options) : undefined
 
-      actionMutation = mutation
+      if (mutation) {
+        actionMutation = mutation
+      }
+
       actionOptions = {
         extends: parsedOptions,
         sub: injectSubMutation(store, parsedOptions),
         onMutate: (mutator) => {
-          context.commit(mutation, mutator)
-          initialized = true
+          if (actionMutation) {
+            context.commit(actionMutation, mutator)
+            initialized = true
+          } else {
+            mutator()
+          }
         }
       }
-
-      assertString(mutation, 'fieryBinding must be passed the mutation as the third argument to $fiery')
 
       return $fiery(source, actionOptions, action)
     }
@@ -230,7 +235,7 @@ export function fieryBinding(action: string, actionFactory: FieryBinding): VuexA
 
     const initial = actionFactory(context, payload, actionFiery, actionCommit)
 
-    assertString(actionMutation, 'fieryBinding must have a mutation set through $fiery (3rd argument to fieryBinding) or calling commit (4th argument)')
+    assertString(actionMutation, 'fieryBinding must be passed the mutation through $fiery or commit')
 
     if (!initialized)
     {
