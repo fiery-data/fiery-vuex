@@ -29,10 +29,13 @@ export declare type VuexAction = <T>(context: any, payload: any) => Promise<T> |
 export declare type VuexActions = {
     [action: string]: VuexAction;
 };
-declare const _default: {
-    install(Vue: any, options: any): void;
+declare const plugin: {
+    $fiery: FieryInstance;
+    install(_Vue: any, options: any): void;
 };
-export default _default;
+export default plugin;
+export declare function fieryDestroy(): FieryInstance;
+export declare function fieryCreate(Vue: any): FieryInstance;
 export declare function fieryState(factory: FieryState): VuexState;
 export declare function fieryMapMutations(mappings: FieryMutationMapping): VuexMutations;
 export declare function fieryMutations(mutations: FieryMutations): VuexMutations;

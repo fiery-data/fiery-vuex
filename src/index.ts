@@ -41,46 +41,70 @@ export type VuexActions = { [action: string]: VuexAction }
 
 
 
+let Vue
 let $fiery: FieryInstance
-
 let $strict: boolean = false
 
-export default {
+const plugin =
+{
+  $fiery: {} as FieryInstance,
 
-  install (Vue, options)
+  install (_Vue, options)
   {
+    Vue = _Vue
+
     $strict = !!(options && options.strict)
-    $fiery = getInstance({
-      setProperty: (target: any, property: string, value: any) =>
-      {
-        Vue.set(target, property, value)
-      },
-      removeProperty: (target: any, property: string) =>
-      {
-        Vue.delete(target, property)
-      },
-      arraySet: (target: any[], index: number, value: any) =>
-      {
-        if (target[index] !== value)
-        {
-          target.splice(index, 1, value)
-        }
-      },
-      arrayResize: (target: any[], size: number) =>
-      {
-        if (target.length > size)
-        {
-          target.splice(size, target.length - size)
-        }
-        else if (target.length < size)
-        {
-          target.length = size
-        }
-      }
-    })
+    $fiery = fieryCreate(Vue)
 
     this.$fiery = $fiery
   }
+}
+
+export default plugin
+
+export function fieryDestroy(): FieryInstance
+{
+  $fiery.destroy()
+  $fiery = fieryCreate(Vue)
+
+  plugin.$fiery = $fiery
+
+  return $fiery
+}
+
+export function fieryCreate(Vue): FieryInstance
+{
+  assert(Vue && Vue.set && Vue.delete, 'fieryCreate requires a reference to Vue')
+
+  return getInstance(
+  {
+    setProperty: (target: any, property: string, value: any) =>
+    {
+      Vue.set(target, property, value)
+    },
+    removeProperty: (target: any, property: string) =>
+    {
+      Vue.delete(target, property)
+    },
+    arraySet: (target: any[], index: number, value: any) =>
+    {
+      if (target[index] !== value)
+      {
+        target.splice(index, 1, value)
+      }
+    },
+    arrayResize: (target: any[], size: number) =>
+    {
+      if (target.length > size)
+      {
+        target.splice(size, target.length - size)
+      }
+      else if (target.length < size)
+      {
+        target.length = size
+      }
+    }
+  })
 }
 
 export function fieryState(factory: FieryState): VuexState
