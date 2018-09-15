@@ -30,7 +30,7 @@ Relies on [fiery-data](https://github.com/fiery-data/fiery-data) and is a sister
 - Documents [example](http://github.com/fiery-data/fiery-data#documents)
 - Collections (stored as array or map) [example](http://github.com/fiery-data/fiery-data#collections)
 - Queries (stored as array or map) [example](http://github.com/fiery-data/fiery-data#queries)
-- Pagination [example](#http://github.com/fiery-data/fiery-data#pagination)
+- Pagination [example](http://github.com/fiery-data/fiery-data#pagination)
 - Real-time or once [example](http://github.com/fiery-data/fiery-data#real-time-or-once)
 - Adding, updating, sync, removing, remove field [example](http://github.com/fiery-data/fiery-data#adding-updating-overwriting-removing)
 - Sub-collections (with cascading deletions!) [example](http://github.com/fiery-data/fiery-data#sub-collections)
