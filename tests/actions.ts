@@ -33,12 +33,16 @@ describe('actions', function()
 
   it('documents', function()
   {
+    interface TodoStore {
+      todo: Todo
+    }
+
     const fs = getStore('actions documents', {
       'todos/1': { name: 'T1', done: false },
       'todos/2': { name: 'T2', done: true }
     })
 
-    const store = new Vuex.Store({
+    const store = new Vuex.Store<TodoStore>({
       strict: true,
       state: {
         todo: new Todo()
@@ -95,6 +99,10 @@ describe('actions', function()
 
   it('collections', function()
   {
+    interface TodoStore {
+      todos: Todo[]
+    }
+
     const fs = getStore('actions collections', {
       'todos/1': { name: 'T1', done: false },
       'todos/2': { name: 'T2', done: true },
@@ -103,10 +111,10 @@ describe('actions', function()
       'todos/5': { name: 'T5', done: true }
     })
 
-    const store = new Vuex.Store({
+    const store = new Vuex.Store<TodoStore>({
       strict: true,
       state: {
-        todos: [] as Todo[]
+        todos: []
       },
       mutations: {
         setTodos (state, getTodos) {
@@ -115,7 +123,7 @@ describe('actions', function()
         ...fieryMutations({
           unfinishTodo(state, todo, fiery) {
             todo.done = false
-            fiery.save(todo)
+            fiery.update(todo)
           }
         })
       },
@@ -133,38 +141,31 @@ describe('actions', function()
       }
     })
 
+    const getNames = () => store.state.todos.map(t => t.name)
+
     expect(store.state.todos).to.be.ok
     expect(store.state.todos.length).to.equal(0)
 
     store.dispatch('updateTodos', {done: true})
 
-    expect(store.state.todos).to.be.ok
-    expect(store.state.todos.length).to.equal(3)
-    expect(store.state.todos[0].name).to.equal('T2')
-    expect(store.state.todos[1].name).to.equal('T4')
-    expect(store.state.todos[2].name).to.equal('T5')
+    debugger;
+
+    expect(getNames()).to.deep.equal(['T2', 'T4', 'T5'])
 
     store.commit('unfinishTodo', store.state.todos[0])
 
-    expect(store.state.todos.length).to.equal(2)
-    expect(store.state.todos[0].name).to.equal('T4')
-    expect(store.state.todos[1].name).to.equal('T5')
+    expect(getNames()).to.deep.equal(['T4', 'T5'])
 
     fs.doc('todos/3').update({done: true})
 
-    expect(store.state.todos.length).to.equal(3)
-    expect(store.state.todos[0].name).to.equal('T3')
-    expect(store.state.todos[1].name).to.equal('T4')
-    expect(store.state.todos[2].name).to.equal('T5')
+    expect(getNames()).to.deep.equal(['T3', 'T4', 'T5'])
 
     const todos = store.state.todos
 
     store.dispatch('updateTodos', {done: false})
 
     expect(store.state.todos).to.equal(todos)
-    expect(store.state.todos.length).to.equal(2)
-    expect(store.state.todos[0].name).to.equal('T1')
-    expect(store.state.todos[1].name).to.equal('T2')
+    expect(getNames()).to.deep.equal(['T1', 'T2'])
   })
 
   it('sub', function()
@@ -178,6 +179,10 @@ describe('actions', function()
       title: string = ''
       content: string = ''
       comments: Comment[] = []
+    }
+
+    interface PostStore {
+      post: Post | null
     }
 
     const CommentOptions = {
@@ -202,10 +207,10 @@ describe('actions', function()
       'post/1/comments/2': { content: 'C2', created_at: 2 }
     })
 
-    const store = new Vuex.Store({
+    const store = new Vuex.Store<PostStore>({
       strict: true,
       state: {
-        post: null as Post | null
+        post: null
       },
       mutations: {
         ...fieryMapMutations({

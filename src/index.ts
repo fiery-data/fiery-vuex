@@ -79,24 +79,6 @@ export function fieryCreate (Vue): FieryInstance
     removeProperty: (target: any, property: string) =>
     {
       Vue.delete(target, property)
-    },
-    arraySet: (target: any[], index: number, value: any) =>
-    {
-      if (target[index] !== value)
-      {
-        target.splice(index, 1, value)
-      }
-    },
-    arrayResize: (target: any[], size: number) =>
-    {
-      if (target.length > size)
-      {
-        target.splice(size, target.length - size)
-      }
-      else if (target.length < size)
-      {
-        target.length = size
-      }
     }
   })
 }
