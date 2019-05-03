@@ -23,6 +23,8 @@ export type FieryBinding = (context: any, payload: any, fiery: FieryBindingFacto
 
 export type FieryBindings = { [action: string]: FieryBinding }
 
+export type FieryBindingOptions = { commitInitial: boolean };
+
 export type FieryState = <S>(fiery: FieryInstance) => S
 
 export type FieryCommit = <T extends FieryTarget>(mutation: string, target: T) => T
@@ -178,19 +180,19 @@ export function fieryAction <S = any>(action: FieryAction): Action<S, S>
   }
 }
 
-export function fieryBindings <S = any>(actions: FieryBindings): ActionTree<S, S>
+export function fieryBindings <S = any>(actions: FieryBindings, options?: Partial<FieryBindingOptions>): ActionTree<S, S>
 {
   const out = {}
 
   for (let action in actions)
   {
-    out[action] = fieryBinding(action, actions[action])
+    out[action] = fieryBinding(action, actions[action], options)
   }
 
   return out
 }
 
-export function fieryBinding <S = any>(action: string, actionFactory: FieryBinding): Action<S, S>
+export function fieryBinding <S = any>(action: string, actionFactory: FieryBinding, options?: Partial<FieryBindingOptions>): Action<S, S>
 {
   assertString(action, 'fieryBinding must be passed the action name as the first argument')
   assertFunction(actionFactory, 'fieryBinding can only be passed a function which accepts (context, payload, $fiery)')
@@ -237,7 +239,7 @@ export function fieryBinding <S = any>(action: string, actionFactory: FieryBindi
 
     assertString(actionMutation, 'fieryBinding must be passed the mutation through $fiery or commit')
 
-    if (!initialized)
+    if (!initialized && (!options || options.commitInitial != false))
     {
       context.commit(actionMutation, () => initial)
     }

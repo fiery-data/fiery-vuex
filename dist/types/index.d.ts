@@ -17,6 +17,9 @@ export declare type FieryBinding = (context: any, payload: any, fiery: FieryBind
 export declare type FieryBindings = {
     [action: string]: FieryBinding;
 };
+export declare type FieryBindingOptions = {
+    commitInitial: boolean;
+};
 export declare type FieryState = <S>(fiery: FieryInstance) => S;
 export declare type FieryCommit = <T extends FieryTarget>(mutation: string, target: T) => T;
 declare const plugin: {
@@ -32,5 +35,5 @@ export declare function fieryMutations<S = any>(mutations: FieryMutations): Muta
 export declare function fieryMutation<S = any>(mutationFactory: FieryMutation): Mutation<S>;
 export declare function fieryActions<S = any>(actions: FieryActions): ActionTree<S, S>;
 export declare function fieryAction<S = any>(action: FieryAction): Action<S, S>;
-export declare function fieryBindings<S = any>(actions: FieryBindings): ActionTree<S, S>;
-export declare function fieryBinding<S = any>(action: string, actionFactory: FieryBinding): Action<S, S>;
+export declare function fieryBindings<S = any>(actions: FieryBindings, options?: Partial<FieryBindingOptions>): ActionTree<S, S>;
+export declare function fieryBinding<S = any>(action: string, actionFactory: FieryBinding, options?: Partial<FieryBindingOptions>): Action<S, S>;
